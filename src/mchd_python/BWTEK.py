@@ -4,15 +4,17 @@ from time import sleep
 from datetime import datetime
 
 from numpy.ctypeslib import as_array
+from numpy.polynomial import Polynomial
+from numpy.polynomial.polynomial import polyval
 
 import matplotlib.pyplot as plt
 
 from contextlib import AbstractContextManager
-
+import configparser
 
 
 class spectrometer(AbstractContextManager):
-    "./bwtek/BWTEKUSB.dll"
+    "C:/BWTEK/BWSpec4/BWTEKUSB.dll"
     def __init__(self,channel=0,pixels=2048):
         """
         BWTEK USB dll wrapper
@@ -20,7 +22,7 @@ class spectrometer(AbstractContextManager):
         TODO : support mutiple spectrometers
         """
         #Open dll
-        self.lib = ct.windll.LoadLibrary("./bwtek/BWTEKUSB.dll")
+        self.lib = ct.windll.LoadLibrary("C:/BWTEK/BWSpec4/BWTEKUSB.dll")
         
         #define returns types of dll functions
         self.lib.InitDevices.restype = ct.c_bool
@@ -28,8 +30,10 @@ class spectrometer(AbstractContextManager):
         
         
         #defines parameters
-        self.nTriggerMode=ct.c_int(0)
         self.channel = ct.c_int(int(channel))
+        
+        #spectrometers params
+        self.nTriggerMode=ct.c_int(0)
         self.nPixelNo = ct.c_int(pixels)
         
         #prams for USB communicatin
@@ -66,13 +70,49 @@ class spectrometer(AbstractContextManager):
     def readEEPROM(self,filename="param.txt"):
         """
         Read parameters from eprom
-        TODO store dict inthe object
         """
         filename = ct.create_string_buffer(str.encode(filename))
         self.lib.bwtekReadEEPROMUSB(filename,self.channel)
         
-
+    def readConfig(self,filename="param.txt"):
+        """
+        Read parameters from ini file 
+        
+        """
+        config = configparser.ConfigParser()
+        config.read('param.txt')
+        #configdict={s:dict(config.items(s)) for s in config.sections()}
+        self.config=config
+        
+        self.pixel_num=int(self.config['COMMON']['pixel_num'])
+        
+        return config
     
+    def getInterpolate(self):
+        """
+        Read tha parametyers polynomial
+        set self.wavelengths : array in nm of wavelegnth for each pixels
+        Return an interpolating function
+        """
+        a,b = [0,0,0,0],[0,0,0,0]
+        for i in range(4):
+            a[i]=float(self.config['COMMON']['coefs_a'+str(i)])
+           #b[i]=float(self.config['COMMON']['coefs_b'+str(i)])
+        
+        self.wavelengths = Polynomial(a).linspace(n=self.pixel_num, domain=[0,self.pixel_num])[1]
+        
+        #pb = np.polynomial.Polynomial(b)
+        return lambda x:polyval(x,a)
+    
+    def interpolation(self):
+        calib=dict(self.config['CALIBRATION'])
+        x,y=[],[]
+        for point in calib:
+            a,b=[float(x) for x in calib[point].split(';')]
+            x.append(a)
+            y.append(b)
+        return x,y
+        
     def __exit__(self,exc_type, exc_value, traceback):
         self.lib.CloseDevices()
     
@@ -103,8 +143,10 @@ class spectrometer(AbstractContextManager):
         
     def readSpectrumTTL(self):
         """
-        read the spectrum and TTL value before and after
-        return: numpy array sharing the memory,summ of TTL input before and after
+        read the spectrum and TTL input value before and after spectrum
+        return: 
+            - numpy array sharing the memory,
+            - summ of TTL input before and after
         """
         a=self.lib.bwtekGetExtStatus(self.channel)
         self.lib.bwtekDataReadUSB(self.nTriggerMode,
@@ -116,9 +158,8 @@ class spectrometer(AbstractContextManager):
         
 if __name__ == '__main__':
     with spectrometer() as inst:
-        #inst.readEEPROM("atest.dat")
-        #print('EEPROM read')
-        #print('type usb',inst.GetUsbType())
+        inst.readEEPROM("atest.dat")
+        print('EEPROM read into file')
         inttime=20
         print(inst.integrationTime(inttime))
         print(f'integration time changed to {inttime}')
