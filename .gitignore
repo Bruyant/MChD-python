@@ -12,6 +12,8 @@ __pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
+.ipynb_checkpoints
+*_checkpoints.*
 .DS_Store
 
 # Project files
@@ -51,3 +53,5 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 .conda*/
+*.npy
+*.npz
