@@ -154,6 +154,16 @@ class spectrometer(AbstractContextManager):
         a+=self.lib.bwtekGetExtStatus(self.channel)
         return as_array(self.pArray),a        
         
+    def storeSpectrums(fname,res,ttlin,tstamps):
+        """
+        read the spectrum and TTL value before and after
+        return: numpy array sharing the memory,summ of TTL input before and after
+        """
+        with h5py.File(fname, "w") as hf:
+            g=hf.create_group('Scan')
+            g.create_dataset("Spectrums", data=res,dtype='u2',compression="gzip")
+            g.create_dataset("TTLinput", data=ttlin,dtype='i1',compression="gzip")
+            g.attrs["Timestamps"]=[str(tstamp) for tstamp in tstamps]  
         
         
 if __name__ == '__main__':
