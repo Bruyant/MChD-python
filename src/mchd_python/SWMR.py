@@ -1,7 +1,7 @@
 """
 Read datas from spetrometer and save them to hdf5file
 
-
+If enoug time plot them
 
 """
 
@@ -13,20 +13,19 @@ from time import sleep,time
 import multiprocessing
 import matplotlib.pylab as plt
 import numpy as np
-
-
-
-class SwmrReader(Process):
-    def __init__(self, mpShared,q_array):
-        super(SwmrReader, self).__init__()
-        self._mpShared=mpShared
+from numpy.random import default_rng
+rng = np.random.default_rng(12345)
+import BWTEK
+class Reader(Process):
+    def __init__(self, q_array):
+        super(Reader, self).__init__()
         self._q_array=q_array
 
-        # Create figure for plotting
+        # # Create figure for plotting
         self.fig = plt.figure()
         self.xs = []
         self.ys = []
-        self.wavelength = np.arange(2048)/600+600
+        self.wavelength=np.arange(2048)*600/2048+300
         self.spectras = []
 
         # Axes for ttlin
@@ -36,18 +35,19 @@ class SwmrReader(Process):
 
 
     def bufferdatas(self, data):
-        spectra, ti , tf, ttlin=data
-        # add datas
-        self.xs.append(ti)
-        self.ys.append(ttlin)
-        self.spectras.append(spectra)
+        if not data is None:
+            spectra, ti , tf, ttlin=data
+            # add datas
+            self.xs.append(ti)
+            self.ys.append(ttlin)
+            self.spectras.append(spectra)
 
-        # limit graph
-        max_val=100
-        self.xs = self.xs[-max_val:]
-        self.ys = self.ys[-max_val:]
-        self.spectras = self.spectras[-10:]
-
+            # limit graph
+            max_val=100
+            self.xs = self.xs[-max_val:]
+            self.ys = self.ys[-max_val:]
+            self.spectras = self.spectras[-20:]
+            
 
 
 
@@ -63,131 +63,75 @@ class SwmrReader(Process):
     def run(self):
         self.log = multiprocessing.get_logger()
         self.log.info("Waiting for measurement start")
-        self._mpShared.barrier.wait()
-        self.log.info("measurement start: reader")
-        try:
-            # monitor and read loop
-            while 1:
-                if  self._mpShared.shutdown_event.is_set():
-                    self.log.info(f"Closing after flushing{self._q_array.qsize()} items in queue") 
-
-                if self._q_array.qsize()>0:
-                    self.log.info(f"{self._q_array.qsize()} items in queue")    
-                    for k in range(self._q_array.qsize()):
-                        data=self._q_array.get()
-                        self.bufferdatas(data)
-                        sleep(0.008)
-                    self.animate()
-                    
-                if self._mpShared.shutdown_event.is_set() and self._q_array.qsize()==0:
-                    self.log.info(f"empty que Closing")
-                    break
-                                              
-        except:
-            self.log.error("Exception in reader", exc_info=1)
-            self._mpShared.shutdown_event.set()            
-        finally:
-            self.log.info("Closing reader")
-            self._q_array.close() 
-            # here we close the file
-            # self._mpShared.shutdown_event.clear()
-
-class ReadSpectrometer(Process):
-    def __init__(self, mpShared,q_array):
-        super(ReadSpectrometer, self).__init__()
-        self._mpShared=mpShared
-        self._q_array=q_array
+        # monitor and read loop
+        while 1:
+            n=self._q_array.qsize()
+            if n>0:
+                self.log.info(f"{n} items in queue")
+            data=self._q_array.get()
+            
+            if data is None:
+                self.log.info(f"empty queue Closing")
+                break
+            else:
+                self.bufferdatas(data)
+                sleep(0.008)
+            
+            if n<2: #if we have time (queue nealy empty) plot datas
+                self.animate()
+        return
 
 
-    def run(self):
-        #multiprocessing.log_to_stderr()
-        self.log = multiprocessing.get_logger()
-        self.log.info("Creating file %s", self._mpShared.fname)
-        try:
-            self.log.info("preparing for measurement")
-            self._mpShared.barrier.wait()
-            self.log.info("measurement start")
-            # Write loop
-            i=0
-            while i<100:
-                ti=time()
-                sleep(20e-3)
-                ttlin=i%5
-                data=(1000+ttlin)*np.exp(-(np.arange(2048)-850)**2/200**2)
-                
-                
-                if i%10==0:
-                    self.log.info(f"Writing data {i}")
-                tf=time()
-                self._q_array.put((data, ti, tf, ttlin))
-                self._mpShared.event.set()
-                if self._mpShared.shutdown_event.is_set():
-                    break
-                i+=1
-        except KeyboardInterrupt:
-            pass        
-        except:
-            self.log.error("Exception in writer", exc_info=1)          
-        finally:
-            self.log.info("Closing ReadSpectrometer")
-
-import sys, signal
-def signal_handler(signal, frame):
-    print("\nprogram exiting gracefully")
-    mpShared.shutdown_event.set()
-
-
+def simulate_datas(ttlin):
+        data=(10-2*ttlin)*np.exp(-(np.arange(2048)-850)**2/200**2)+0.1*rng.random(2048)
+        sleep(20e-3) #measurement
+        return data
 
 
 if __name__ == "__main__":
-    logger = multiprocessing.log_to_stderr(logging.INFO)
-    signal.signal(signal.SIGINT, signal_handler)
-    dsetname = 'data'
-    if len(sys.argv) > 1:
-        fname = sys.argv[1]
-    if len(sys.argv) > 2:
-        dsetname = sys.argv[2]
+    log = multiprocessing.log_to_stderr(logging.INFO)
 
+    # do not work on old python
+    q_array = multiprocessing.Queue()
+    
+    log.info("Creating Processes")
+    reader = Reader(q_array)
+    reader.start()
+    
+    log.info("preparing for measurement")
+    inst=BWTEK.spectrometer()
 
-    with multiprocessing.Manager() as Manager:
-        mpShared=Manager.Namespace()
-        timeout=1
+    inst.integrationTime(20)
+    inst.readEEPROM()
+    inst.readConfig()
+    log.info(f"connect to {inst.config['COMMON']['model']}")
 
-        # events
-        mpShared.event = Manager.Event()
-        mpShared.barrier = Manager.Barrier(2)
-        mpShared.shutdown_event = Manager.Event()
-        mpShared.event_stop = Manager.Event()
-
-        # do not work on old python
-        #mpShared.q_array = Manager.Queue()
-        q_array = multiprocessing.Queue()
-
-
-        #common datas
-        mpShared.fname = 'swmrmp2.h5'
-        mpShared.timeout= 1
-        mpShared.meas_idx= 0
+    log.info("measurement start")
+    # Write loop
+    i=0
+    N=300*100
+    p.nice(psutil.REALTIME_PRIORITY_CLASS)
+    while i<N:
+        ti=time()
         
-
-        logger.info("Creating Processes")
-        reader = SwmrReader(mpShared,q_array )
-        writer = ReadSpectrometer(mpShared,q_array)
+        ttlin=int(i/13)%2
+        #simulate datas
+        #data=simulate_datas(ttlin)
+        data,ttlin=inst.readSpectrumTTL()
         
-        logging.info("Starting reader")
-        reader.start()
-        logging.info("Starting writer")
-        writer.start()
-        logging.info("waiting for close")
-        
-        while not mpShared.shutdown_event.is_set():
-            sleep(1)
-         
-        
-        logging.info("reader closed")
-        q_array.close()
-        writer.join()
-        reader.join()
-        writer.terminate()
+        if i%10==0:
+            log.info(f"Writing data {i}")
+        tf=time()
+        q_array.put((data, ti, tf, ttlin))
+        i+=1
+    
+    p.nice(psutil.NORMAL_PRIORITY_CLASS)     
+    #send stop to reader    
+    q_array.put(None) 
 
     
+    
+    logging.info("Stopping")
+    reader.join(1)
+    reader.terminate()
+    inst.close()
