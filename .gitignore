@@ -55,3 +55,4 @@ MANIFEST
 .conda*/
 *.npy
 *.npz
+*.h5
