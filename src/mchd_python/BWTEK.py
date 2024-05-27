@@ -145,14 +145,14 @@ class spectrometer(AbstractContextManager):
         """
         read the spectrum and TTL input value before and after spectrum
         return: 
-            - numpy array sharing the memory,
+            - numpy array sharing the memory of the spectrum,
             - summ of TTL input before and after
         """
-        a=self.lib.bwtekGetExtStatus(self.channel)
+        ttl_in=self.lib.bwtekGetExtStatus(self.channel)
         self.lib.bwtekDataReadUSB(self.nTriggerMode,
                                   ct.byref(self.pArray),self.channel)
-        a+=self.lib.bwtekGetExtStatus(self.channel)
-        return as_array(self.pArray),a        
+        ttl_in+=self.lib.bwtekGetExtStatus(self.channel)
+        return as_array(self.pArray),ttl_in       
         
         
         
