@@ -24,14 +24,14 @@ class SpectrometerProcedure(Procedure):
     # Consider a group_by or group_condition arguments.
     averages_pairs = IntegerParameter('Field Averages/Pairs', default=5)
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
-    spec_n_averages = IntegerParameter('Spectrometer Averages', default=5)
+    spec_n_averages = IntegerParameter('Spectrometer Averages', default=5) # TODO: implement it to spectrometer
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
 
     mag_inertia = FloatParameter('Magnet Inertia Time', units='s', default=0.5)
 
     comment = Parameter('Comment', default='No Comment')
 
-    DATA_COLUMNS = ['Pair', 'Spectrum_x', 'max_SUM', 'Sum', 'Dif', 'Sp+Sn mean', 'Sp-Sn mean']
+    DATA_COLUMNS = ['Pair', 'Wavelength', 'max_SUM', 'Sum', 'Dif', 'Sp mean', 'Sn mean', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']
 
     # Parameters Initialisation
     progress = 0
@@ -144,9 +144,11 @@ class SpectrometerProcedure(Procedure):
 
         for i in range(len(spectrum_x)):  # TODO: ADAPT to have multiple plots at once, the whole vector
             data = {
-                'Spectrum_x': spectrum_x[i],
-                'Sp+Sn mean': np.mean(Sp_all + Sn_all, axis=0)[i],
-                'Sp-Sn mean': np.mean(Sp_all - Sn_all, axis=0)[i]
+                'Wavelength': spectrum_x[i],
+                'Sp mean': np.mean(Sp_all, axis=0)[i],
+                'Sn mean': np.mean(Sn_all, axis=0)[i],
+                'Sp+Sn /2 mean': np.mean((Sp_all + Sn_all)/2, axis=0)[i],
+                'Sp-Sn /2 mean': np.mean((Sp_all - Sn_all)/2, axis=0)[i]
             }
             self.emit('results', data)
 
@@ -164,7 +166,7 @@ class SpectrometerProcedure(Procedure):
         setpoint_reach = self.NIDAQ_points/self.NIDAQ_Fs  # in seconds
         t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_n_averages  # in seconds
 
-        duration = setpoint_reach * (2 * self.averages_pairs + 1) + 2 * t_meas_spectometer * self.averages_pairs
+        duration = (setpoint_reach + self.mag_inertia) * (2 * self.averages_pairs + 1) + 2 * t_meas_spectometer * self.averages_pairs
 
         estimates = [
             ("Duration", "%d s" % int(duration)),
@@ -189,7 +191,7 @@ class SpectrometerProcedure(Procedure):
             d = Sp[i]-Sn[i]
             data = {
                 'Pair': self.pair,
-                'Spectrum_x': spectrum_x[i],
+                'Wavelength': spectrum_x[i],
                 'Sum':  s / 2,
                 'Dif':  d / 2,
                 'max_SUM': np.max((Sp + Sn)/2)
@@ -209,6 +211,7 @@ class SpectrometerProcedure(Procedure):
             log.info("Setting the end sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_end_increase)
             log.info("End sine increase on field finished")
+            time.sleep(self.mag_inertia)
             self.NIDAQ.shutdown()
             del self.NIDAQ
         except AttributeError:

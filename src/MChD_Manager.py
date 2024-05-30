@@ -6,15 +6,15 @@ from MChD_Procedures import SpectrometerProcedure
 
 class MainWindow(ManagedDockWindow):
     # Docked plots are started, the layout can be saved in a file that will be load at startup if it exists.
-    parameters_list = ['averages_pairs', 'spec_int_time', 'control_voltage','mag_inertia', 'comment']
+    parameters_list = ['averages_pairs', 'spec_int_time', 'control_voltage', 'mag_inertia', 'comment']
 
     def __init__(self):
         super().__init__(
             procedure_class=SpectrometerProcedure,
             inputs=self.parameters_list,
             displays=self.parameters_list,
-            x_axis=['Spectrum_x'],
-            y_axis=['Sum', 'Dif', 'Sp+Sn mean', 'Sp-Sn mean'],
+            x_axis=['Wavelength'],
+            y_axis=['Sum', 'Dif', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean'],
             sequencer=True,  # Added line
             # sequencer_inputs = ['iterations', 'delay', 'seed'],  # Added line
             # sequence_file = "gui_sequencer_example_sequence.txt",  # Added line, optional
