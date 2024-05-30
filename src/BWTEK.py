@@ -13,7 +13,7 @@ from contextlib import AbstractContextManager
 import configparser
 
 
-class spectrometer(AbstractContextManager):
+class GlacierX(AbstractContextManager):
     dll="C:/BWTEK/BWSpec4/BWTEKUSB.dll"
     dll=(r"C:\Users\lorenco\Documents\GitHub\MChD-python\bwtek\BWTEKUSB.dll")
     def __init__(self,channel=0,pixels=2048):
@@ -65,7 +65,7 @@ class spectrometer(AbstractContextManager):
         Return:  1,2,3
         """
         nUSBType = ct.c_int(1)
-        self.lib.GetUSBType(ct.byref(nUSBType),self.channel)
+        self.lib.GetUSBType(ct.byref(nUSBType), self.channel)
         return nUSBType.value
 
     def readEEPROM(self,filename="param.txt"):
@@ -113,7 +113,10 @@ class spectrometer(AbstractContextManager):
             x.append(a)
             y.append(b)
         return x,y
-        
+
+    def shutdown(self):
+        self.lib.CloseDevices()
+
     def __exit__(self,exc_type, exc_value, traceback):
         self.lib.CloseDevices()
     
@@ -168,11 +171,14 @@ class spectrometer(AbstractContextManager):
         
         
 if __name__ == '__main__':
-    with spectrometer() as inst:
-        inst.readEEPROM("atest.dat")
+    with GlacierX() as inst:
+        inst.readEEPROM()
         print('EEPROM read into file')
-        inttime=20
+        inst.readConfig()
+        inttime = 20
         print(inst.integrationTime(inttime))
         print(f'integration time changed to {inttime}')
-        plt.plot(inst.readSpectrum())
+        inst.getInterpolate()
+        spectrum = inst.readSpectrum()
+        plt.plot(inst.wavelengths, spectrum)
         plt.show()
