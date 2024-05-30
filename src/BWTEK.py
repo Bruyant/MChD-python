@@ -147,7 +147,11 @@ class GlacierX(AbstractContextManager):
         return np.float32(as_array(self.pArray))
     
     def integrationTime(self, Itime):
-        Itime = ct.c_long(int(Itime))  # Time in microseconds
+        """
+        Itime for BTC112E: 5 – 65535ms in milliseconds
+
+        """
+        Itime = ct.c_long(int(Itime))
         return self.lib.bwtekSetTimeUSB(Itime, self.channel)
         
     def readSpectrumTTL(self):
@@ -180,21 +184,12 @@ if __name__ == '__main__':
         inst.readEEPROM()
         print('EEPROM read into file')
         inst.readConfig()
-        inttime = 20
+        inttime = 5
         print(inst.integrationTime(inttime))
         print(f'integration time changed to {inttime}')
         inst.getInterpolate()
         spectrum = inst.readSpectrum()
 
-        # time.sleep(1)
-    # with GlacierX() as inst:
-        inst.readEEPROM()
-        # print('EEPROM read into file')
-        inst.readConfig()
-        inttime = 20
-        print(inst.integrationTime(inttime))
-        #print(f'integration time changed to {inttime}')
-        inst.getInterpolate()
         spectrum2 = inst.readSpectrum()
     plt.plot(inst.wavelengths, spectrum)
     plt.plot(inst.wavelengths, spectrum2)

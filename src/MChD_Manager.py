@@ -14,7 +14,7 @@ class MainWindow(ManagedDockWindow):
             inputs=self.parameters_list,
             displays=self.parameters_list,
             x_axis=['Spectrum_x'],
-            y_axis=['Sum', 'Dif'],
+            y_axis=['Sum', 'Dif', 'Sp+Sn mean', 'Sp-Sn mean'],
             sequencer=True,  # Added line
             # sequencer_inputs = ['iterations', 'delay', 'seed'],  # Added line
             # sequence_file = "gui_sequencer_example_sequence.txt",  # Added line, optional

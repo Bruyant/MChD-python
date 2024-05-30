@@ -23,7 +23,7 @@ from NationalInstruments import DAQ_6001
 class SpectrometerProcedure(Procedure):
     # Consider a group_by or group_condition arguments.
     averages_pairs = IntegerParameter('Field Averages/Pairs', default=5)
-    spec_int_time = FloatParameter('Spectrometer Integration Time', units='μs', default=20)
+    spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
     spec_n_averages = IntegerParameter('Spectrometer Averages', default=5)
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
 
@@ -31,13 +31,16 @@ class SpectrometerProcedure(Procedure):
 
     comment = Parameter('Comment', default='No Comment')
 
-    DATA_COLUMNS = ['Pair', 'Spectrum_x', 'max_SUM', 'Sum', 'Dif']
+    DATA_COLUMNS = ['Pair', 'Spectrum_x', 'max_SUM', 'Sum', 'Dif', 'Sp+Sn mean', 'Sp-Sn mean']
 
     # Parameters Initialisation
     progress = 0
     pair = 0
     NIDAQ_points = 1000
     NIDAQ_Fs = 1000
+
+    Sp_all = []
+    Sn_all = []
 
     def startup(self):
         self.x_increase = np.linspace(-np.pi / 2, np.pi / 2, self.NIDAQ_points)
@@ -79,6 +82,7 @@ class SpectrometerProcedure(Procedure):
 
         # On Positive Edge
         Sp = self.spectrometer.readSpectrum()
+        self.Sp_all.append(Sp)
         self.progress += 1
         self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
 
@@ -89,6 +93,7 @@ class SpectrometerProcedure(Procedure):
         log.info("Sine decrease on field finished")
         time.sleep(self.mag_inertia)
         Sn = self.spectrometer.readSpectrum()
+        self.Sn_all.append(Sn)
         self.progress += 1
         self.pair += 1
 
@@ -107,6 +112,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Sine increase on field finished")
             time.sleep(self.mag_inertia)
             Sp = self.spectrometer.readSpectrum()
+            self.Sp_all.append(Sp)
             self.progress += 1
             self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
 
@@ -120,12 +126,29 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Sine decrease on field finished")
             time.sleep(self.mag_inertia)
             Sn = self.spectrometer.readSpectrum()
+            self.Sn_all.append(Sn)
             self.progress += 1
             self.pair += 1
 
             # Emit data
             self.send_data(Sp, Sn)
             self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
+
+
+        self.send_means(self.Sp_all, self.Sn_all)
+
+    def send_means(self, Sp_all, Sn_all):
+        Sp_all = np.array(Sp_all)
+        Sn_all = np.array(Sn_all)
+        spectrum_x = self.spectrometer.wavelengths
+
+        for i in range(len(spectrum_x)):  # TODO: ADAPT to have multiple plots at once, the whole vector
+            data = {
+                'Spectrum_x': spectrum_x[i],
+                'Sp+Sn mean': np.mean(Sp_all + Sn_all, axis=0)[i],
+                'Sp-Sn mean': np.mean(Sp_all - Sn_all, axis=0)[i]
+            }
+            self.emit('results', data)
 
     def get_estimates(self, sequence_length=None, sequence=None):
         """
@@ -139,7 +162,7 @@ class SpectrometerProcedure(Procedure):
 
         # TODO: take into account the sequence
         setpoint_reach = self.NIDAQ_points/self.NIDAQ_Fs  # in seconds
-        t_meas_spectometer = self.spec_int_time * 1e-6 * self.spec_n_averages  # in seconds
+        t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_n_averages  # in seconds
 
         duration = setpoint_reach * (2 * self.averages_pairs + 1) + 2 * t_meas_spectometer * self.averages_pairs
 
@@ -157,13 +180,13 @@ class SpectrometerProcedure(Procedure):
         """
         Emit data
         """
+
         spectrum_x = self.spectrometer.wavelengths
 
         log.debug("Emitting results...")
         for i in range(len(Sp)): # TODO: ADAPT to have multiple plots at once, the whole vector
             s = Sp[i]+Sn[i]
             d = Sp[i]-Sn[i]
-            print(Sp[i], Sn[i])
             data = {
                 'Pair': self.pair,
                 'Spectrum_x': spectrum_x[i],
