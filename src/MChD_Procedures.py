@@ -1,5 +1,6 @@
 import tempfile
 import random
+import time
 from time import sleep
 from pymeasure.log import console_log
 from pymeasure.experiment import Procedure, Results
@@ -25,6 +26,8 @@ class SpectrometerProcedure(Procedure):
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='μs', default=20)
     spec_n_averages = IntegerParameter('Spectrometer Averages', default=5)
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
+
+    mag_inertia = FloatParameter('Magnet Inertia Time', units='s', default=0.5)
 
     comment = Parameter('Comment', default='No Comment')
 
@@ -67,6 +70,7 @@ class SpectrometerProcedure(Procedure):
             log.info("Setting the first sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_ini_increase)
             log.info("First sine increase on field finished")
+            time.sleep(self.mag_inertia)
         except:
             log.error(traceback.format_exc())
             log.error("NIDAQ 6001 not connected !")
@@ -78,10 +82,12 @@ class SpectrometerProcedure(Procedure):
         self.progress += 1
         self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
 
+
         # NEGATIVE EDGE
         log.info("Setting the sine decrease on field")
         self.NIDAQ.set_voltage_points(self.sine_decrease)
         log.info("Sine decrease on field finished")
+        time.sleep(self.mag_inertia)
         Sn = self.spectrometer.readSpectrum()
         self.progress += 1
         self.pair += 1
@@ -99,6 +105,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Setting the sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_increase)
             log.info(f"Loop {pair}: Sine increase on field finished")
+            time.sleep(self.mag_inertia)
             Sp = self.spectrometer.readSpectrum()
             self.progress += 1
             self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
@@ -111,6 +118,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Setting the sine decrease on field")
             self.NIDAQ.set_voltage_points(self.sine_decrease)
             log.info(f"Loop {pair}: Sine decrease on field finished")
+            time.sleep(self.mag_inertia)
             Sn = self.spectrometer.readSpectrum()
             self.progress += 1
             self.pair += 1
@@ -153,12 +161,15 @@ class SpectrometerProcedure(Procedure):
 
         log.debug("Emitting results...")
         for i in range(len(Sp)): # TODO: ADAPT to have multiple plots at once, the whole vector
+            s = Sp[i]+Sn[i]
+            d = Sp[i]-Sn[i]
+            print(Sp[i], Sn[i])
             data = {
                 'Pair': self.pair,
                 'Spectrum_x': spectrum_x[i],
-                'Sum':  (Sp[i] + Sn[i]) / 2,
-                'Dif':  (Sp[i] - Sn[i]) / 2,
-                'max_SUM': np.max(Sp + Sn)
+                'Sum':  s / 2,
+                'Dif':  d / 2,
+                'max_SUM': np.max((Sp + Sn)/2)
             }
             self.emit('results', data)
         log.debug("Results emitted...")

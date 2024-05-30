@@ -1,4 +1,5 @@
 import ctypes as ct
+import time
 from time import sleep
 
 from datetime import datetime
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from contextlib import AbstractContextManager
 import configparser
-
+import numpy as np
 
 class GlacierX(AbstractContextManager):
     dll="C:/BWTEK/BWSpec4/BWTEKUSB.dll"
@@ -137,9 +138,13 @@ class GlacierX(AbstractContextManager):
         read the spectrum
         return: numpy array sharing the memory
         """
+        self.channel = ct.c_int(int(0))
+        self.pArray = (ct.c_ushort * 2048)()
+        self.nTriggerMode = ct.c_int(0)
+
         self.lib.bwtekDataReadUSB(self.nTriggerMode,
-                                  ct.byref(self.pArray),self.channel)
-        return as_array(self.pArray)
+                                  ct.byref(self.pArray), self.channel)
+        return np.float32(as_array(self.pArray))
     
     def integrationTime(self, Itime):
         Itime = ct.c_long(int(Itime))  # Time in microseconds
@@ -180,5 +185,17 @@ if __name__ == '__main__':
         print(f'integration time changed to {inttime}')
         inst.getInterpolate()
         spectrum = inst.readSpectrum()
-        plt.plot(inst.wavelengths, spectrum)
-        plt.show()
+
+        # time.sleep(1)
+    # with GlacierX() as inst:
+        inst.readEEPROM()
+        # print('EEPROM read into file')
+        inst.readConfig()
+        inttime = 20
+        print(inst.integrationTime(inttime))
+        #print(f'integration time changed to {inttime}')
+        inst.getInterpolate()
+        spectrum2 = inst.readSpectrum()
+    plt.plot(inst.wavelengths, spectrum)
+    plt.plot(inst.wavelengths, spectrum2)
+    plt.show()
