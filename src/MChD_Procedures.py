@@ -24,14 +24,14 @@ class SpectrometerProcedure(Procedure):
     # Consider a group_by or group_condition arguments.
     averages_pairs = IntegerParameter('Field Averages/Pairs', default=5)
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
-    spec_n_averages = IntegerParameter('Spectrometer Averages', default=5) # TODO: implement it to spectrometer
+    spec_n_averages = IntegerParameter('Spectrometer Averages', default=5)  # TODO: implement it to spectrometer
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
 
     mag_inertia = FloatParameter('Magnet Inertia Time', units='s', default=0.5)
 
     comment = Parameter('Comment', default='No Comment')
 
-    DATA_COLUMNS = ['Pair', 'Wavelength', 'max_SUM', 'Sum', 'Dif', 'Sp mean', 'Sn mean', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']
+    DATA_COLUMNS = ['Pair', 'Wavelength', 'max_SUM', 'Sp+Sn /2', 'Sp-Sn /2', 'Sp mean', 'Sn mean', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']
 
     # Parameters Initialisation
     progress = 0
@@ -138,6 +138,16 @@ class SpectrometerProcedure(Procedure):
         self.send_means(self.Sp_all, self.Sn_all)
 
     def send_means(self, Sp_all, Sn_all):
+        """
+
+        Args:
+            Sp_all: array containing the different arrays corresponding at each spectrum for each positive field.
+            Sn_all: array containing the different arrays corresponding at each spectrum for each negative field.
+
+        Emits the Mean of Positive and Negative field spectrums respective to the wavelength.
+        It also emits the mean of Sigma ((Sp + Sn )/2) and Delta ((Sp - Sn )/2) spectrums respective to the wavelength.
+
+        """
         Sp_all = np.array(Sp_all)
         Sn_all = np.array(Sn_all)
         spectrum_x = self.spectrometer.wavelengths
@@ -159,7 +169,7 @@ class SpectrometerProcedure(Procedure):
             sequence:
 
         Returns:
-            The displayable structure that contains the estimated time, size, length... of the experiment
+            The displayable structure that contains the estimated time, size, length... of the experiment.
         """
 
         # TODO: take into account the sequence
@@ -178,22 +188,25 @@ class SpectrometerProcedure(Procedure):
         return estimates  # duration
 
     def send_data(self, Sp, Sn):
-        # TODO: adapt docstring
         """
-        Emit data
+        Emit the Sigma ((Sp + Sn )/2) and Delta ((Sp - Sn )/2) Spectrums  at the respective wavelength and pair number.
         """
 
         spectrum_x = self.spectrometer.wavelengths
 
         log.debug("Emitting results...")
+
+        if np.max(Sp) > 65000 or max(Sn) > 65000:
+            log.warning("Spectrum is possibly saturated !")
+
         for i in range(len(Sp)): # TODO: ADAPT to have multiple plots at once, the whole vector
             s = Sp[i]+Sn[i]
             d = Sp[i]-Sn[i]
             data = {
                 'Pair': self.pair,
                 'Wavelength': spectrum_x[i],
-                'Sum':  s / 2,
-                'Dif':  d / 2,
+                'Sp+Sn /2':  s / 2,
+                'Sp-Sn /2':  d / 2,
                 'max_SUM': np.max((Sp + Sn)/2)
             }
             self.emit('results', data)
@@ -201,7 +214,6 @@ class SpectrometerProcedure(Procedure):
 
     def shutdown(self):
         try:
-            # TODO: Adapt upon class definition
             self.spectrometer.shutdown()
             del self.spectrometer
         except AttributeError:
