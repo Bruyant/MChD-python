@@ -31,7 +31,8 @@ class SpectrometerProcedure(Procedure):
 
     comment = Parameter('Comment', default='No Comment')
 
-    DATA_COLUMNS = ['Pair', 'Wavelength', 'max_SUM', 'Sp+Sn /2', 'Sp-Sn /2', 'Sp mean', 'Sn mean', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']
+    DATA_COLUMNS = ['Pair', 'Wavelength', 'max_SUM', 'Sp', 'Sn', 'Sp mean', 'Sn mean', 'Sp+Sn /2', 'Sp-Sn /2',
+                    'Sp+Sn /2 mean', 'Sp-Sn /2 mean']
 
     # Parameters Initialisation
     progress = 0
@@ -199,14 +200,16 @@ class SpectrometerProcedure(Procedure):
         if np.max(Sp) > 65000 or max(Sn) > 65000:
             log.warning("Spectrum is possibly saturated !")
 
-        for i in range(len(Sp)): # TODO: ADAPT to have multiple plots at once, the whole vector
-            s = Sp[i]+Sn[i]
-            d = Sp[i]-Sn[i]
+        for i in range(len(Sp)):  # TODO: ADAPT to have multiple plots at once, the whole vector
+            p = Sp[i]
+            n = Sn[i]
             data = {
                 'Pair': self.pair,
                 'Wavelength': spectrum_x[i],
-                'Sp+Sn /2':  s / 2,
-                'Sp-Sn /2':  d / 2,
+                'Sp': Sp,
+                'Sn': n,
+                'Sp+Sn /2':  (p+n) / 2,
+                'Sp-Sn /2':  (p-n) / 2,
                 'max_SUM': np.max((Sp + Sn)/2)
             }
             self.emit('results', data)
