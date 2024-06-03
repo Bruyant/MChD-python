@@ -6,7 +6,7 @@ from MChD_Procedures import SpectrometerProcedure
 
 class MainWindow(ManagedDockWindow):
     # Docked plots are started, the layout can be saved in a file that will be load at startup if it exists.
-    parameters_list = ['averages_pairs', 'spec_int_time', 'control_voltage', 'mag_inertia', 'comment']
+    parameters_list = ['field_pairs', 'spec_int_time', 'spec_averages', 'control_voltage', 'mag_inertia', 'comment']
 
     def __init__(self):
         super().__init__(

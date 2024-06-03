@@ -22,9 +22,9 @@ from NationalInstruments import DAQ_6001
 
 class SpectrometerProcedure(Procedure):
     # Consider a group_by or group_condition arguments.
-    averages_pairs = IntegerParameter('Field Averages/Pairs', default=5)
+    field_pairs = IntegerParameter('Field Pairs', default=5)
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
-    spec_n_averages = IntegerParameter('Spectrometer Averages', default=5)  # TODO: implement it to spectrometer
+    spec_averages = IntegerParameter('Spectrometer Averages', default=1)  # TODO: implement it to spectrometer
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
 
     mag_inertia = FloatParameter('Magnet Inertia Time', units='s', default=0.5)
@@ -82,10 +82,10 @@ class SpectrometerProcedure(Procedure):
     def execute(self):
 
         # On Positive Edge
-        Sp = self.spectrometer.readSpectrum()
+        Sp = self.spectrometer.readResult(self.spec_averages)
         self.Sp_all.append(Sp)
         self.progress += 1
-        self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
+        self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
 
 
         # NEGATIVE EDGE
@@ -93,16 +93,16 @@ class SpectrometerProcedure(Procedure):
         self.NIDAQ.set_voltage_points(self.sine_decrease)
         log.info("Sine decrease on field finished")
         time.sleep(self.mag_inertia)
-        Sn = self.spectrometer.readSpectrum()
+        Sn = self.spectrometer.readResult(self.spec_averages)
         self.Sn_all.append(Sn)
         self.progress += 1
         self.pair += 1
 
         # Emit data
         self.send_data(Sp, Sn)
-        self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
+        self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
 
-        for pair in range(1, self.averages_pairs):  # if averages_pairs = 1, the for loop is skipped
+        for pair in range(1, self.field_pairs):  # if field_pairs = 1, the for loop is skipped
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
                 break
@@ -112,10 +112,10 @@ class SpectrometerProcedure(Procedure):
             self.NIDAQ.set_voltage_points(self.sine_increase)
             log.info(f"Loop {pair}: Sine increase on field finished")
             time.sleep(self.mag_inertia)
-            Sp = self.spectrometer.readSpectrum()
+            Sp = self.spectrometer.readResult(self.spec_averages)
             self.Sp_all.append(Sp)
             self.progress += 1
-            self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
+            self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
 
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
@@ -126,14 +126,14 @@ class SpectrometerProcedure(Procedure):
             self.NIDAQ.set_voltage_points(self.sine_decrease)
             log.info(f"Loop {pair}: Sine decrease on field finished")
             time.sleep(self.mag_inertia)
-            Sn = self.spectrometer.readSpectrum()
+            Sn = self.spectrometer.readResult(self.spec_averages)
             self.Sn_all.append(Sn)
             self.progress += 1
             self.pair += 1
 
             # Emit data
             self.send_data(Sp, Sn)
-            self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
+            self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
 
     def get_estimates(self, sequence_length=None, sequence=None):
         """
@@ -147,9 +147,10 @@ class SpectrometerProcedure(Procedure):
 
         # TODO: take into account the sequence
         setpoint_reach = self.NIDAQ_points/self.NIDAQ_Fs  # in seconds
-        t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_n_averages  # in seconds
+        t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_averages  # in seconds
 
-        duration = (setpoint_reach + self.mag_inertia) * (2 * self.averages_pairs + 1) + 2 * t_meas_spectometer * self.averages_pairs
+        duration = ((setpoint_reach + self.mag_inertia) * (2 * self.field_pairs + 1)
+                    + 2 * t_meas_spectometer * self.field_pairs * self.spec_averages)
 
         estimates = [
             ("Duration", "%d s" % int(duration)),
