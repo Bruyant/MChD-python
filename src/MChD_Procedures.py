@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import logging, traceback
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
-log.setLevel("DEBUG")
+# log.setLevel("DEBUG")
 
 import matplotlib.pyplot as plt
 # Instruments
@@ -135,34 +135,6 @@ class SpectrometerProcedure(Procedure):
             self.send_data(Sp, Sn)
             self.emit('progress', 100 * self.progress / (self.averages_pairs * 2))
 
-
-        self.send_means(self.Sp_all, self.Sn_all)
-
-    def send_means(self, Sp_all, Sn_all):
-        """
-
-        Args:
-            Sp_all: array containing the different arrays corresponding at each spectrum for each positive field.
-            Sn_all: array containing the different arrays corresponding at each spectrum for each negative field.
-
-        Emits the Mean of Positive and Negative field spectrums respective to the wavelength.
-        It also emits the mean of Sigma ((Sp + Sn )/2) and Delta ((Sp - Sn )/2) spectrums respective to the wavelength.
-
-        """
-        Sp_all = np.array(Sp_all)
-        Sn_all = np.array(Sn_all)
-        spectrum_x = self.spectrometer.wavelengths
-
-        for i in range(len(spectrum_x)):  # TODO: ADAPT to have multiple plots at once, the whole vector
-            data = {
-                'Wavelength': spectrum_x[i],
-                'Sp mean': np.mean(Sp_all, axis=0)[i],
-                'Sn mean': np.mean(Sn_all, axis=0)[i],
-                'Sp+Sn /2 mean': np.mean((Sp_all + Sn_all)/2, axis=0)[i],
-                'Sp-Sn /2 mean': np.mean((Sp_all - Sn_all)/2, axis=0)[i]
-            }
-            self.emit('results', data)
-
     def get_estimates(self, sequence_length=None, sequence=None):
         """
         Args:
@@ -190,26 +162,36 @@ class SpectrometerProcedure(Procedure):
 
     def send_data(self, Sp, Sn):
         """
-        Emit the Sigma ((Sp + Sn )/2) and Delta ((Sp - Sn )/2) Spectrums  at the respective wavelength and pair number.
+        Emits the Positive and Negative field spectrums respective to the wavelength and their instant means over N
+        pairs.
+        Emit the Sigma ((Sp + Sn )/2) and Delta ((Sp - Sn )/2) Spectrums  at the respective wavelength and pair number
+        and their instant means over N pairs.
         """
 
         spectrum_x = self.spectrometer.wavelengths
+
+        Sp_all = np.array(self.Sp_all)
+        Sn_all = np.array(self.Sn_all)
 
         log.debug("Emitting results...")
 
         if np.max(Sp) > 65000 or max(Sn) > 65000:
             log.warning("Spectrum is possibly saturated !")
 
-        for i in range(len(Sp)):  # TODO: ADAPT to have multiple plots at once, the whole vector
+        for i in range(len(Sp)):  # Workaround of emitting the whole spectrum
             p = Sp[i]
             n = Sn[i]
             data = {
                 'Pair': self.pair,
                 'Wavelength': spectrum_x[i],
-                'Sp': Sp,
+                'Sp': p,
                 'Sn': n,
+                'Sp mean': np.mean(Sp_all, axis=0)[i],
+                'Sn mean': np.mean(Sn_all, axis=0)[i],
                 'Sp+Sn /2':  (p+n) / 2,
                 'Sp-Sn /2':  (p-n) / 2,
+                'Sp+Sn /2 mean': np.mean((Sp_all + Sn_all) / 2, axis=0)[i],
+                'Sp-Sn /2 mean': np.mean((Sp_all - Sn_all) / 2, axis=0)[i],
                 'max_SUM': np.max((Sp + Sn)/2)
             }
             self.emit('results', data)

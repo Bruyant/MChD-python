@@ -14,7 +14,7 @@ class MainWindow(ManagedDockWindow):
             inputs=self.parameters_list,
             displays=self.parameters_list,
             x_axis=['Wavelength'],
-            y_axis=['Sp+Sn /2', 'Sp-Sn /2', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean'],
+            y_axis=['Sp+Sn /2', 'Sp+Sn /2 mean', 'Sp-Sn /2', 'Sp-Sn /2 mean'],
             sequencer=True,  # Added line
             # sequencer_inputs = ['iterations', 'delay', 'seed'],  # Added line
             # sequence_file = "gui_sequencer_example_sequence.txt",  # Added line, optional
@@ -25,8 +25,8 @@ class MainWindow(ManagedDockWindow):
         self.setWindowTitle('GUI for MChD')
 
         # TODO: Adapt structure
-        self.filename = r'default_filename_delay{Delay Time:4f}s'  # Sets default filename
-        self.directory = r'C:/Path/to/default/directory'  # Sets default directory
+        self.filename = r"MChD_{date}"  # Sets default filename
+        self.directory = r'C:/Users/admin/Documents/MChD_Data'  # Sets default directory
         self.store_measurement = False  # Controls the 'Save data' toggle
         self.file_input.extensions = ["csv", "txt", "data"]  # Sets recognized extensions, first is the default
         self.file_input.filename_fixed = False  # Controls whether the filename-field is frozen (but still displayed)
