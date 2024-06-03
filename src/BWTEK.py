@@ -177,7 +177,29 @@ class GlacierX(AbstractContextManager):
             g.create_dataset("Spectrums", data=res,dtype='u2',compression="gzip")
             g.create_dataset("TTLinput", data=ttlin,dtype='i1',compression="gzip")
             g.attrs["Timestamps"]=[str(tstamp) for tstamp in tstamps]  
-        
+
+    def readResult(self, averages, smooth_type=0, smooth_value=0):
+        """
+                This function is for reading out data from the detector then applying some data processing
+                return: numpy array sharing the memory
+
+        smooth_type: 0 for no smoothing function
+                     1 for FFT smoothing
+                     2 for Savitzky-Golay smoothing
+                     3 for Boxcar smoothing.
+
+        smooth_value: When using FFT smoothing (nTypeSmoothing=1), this parameter indicates the percentage of cutoff
+                      frequency. The nValueSmoothing should be 0 to 100.
+                      When using Savitzky-Golay smoothing (nTypeSmoothing=2), The nValueSmoothing should be 2 to 5.
+
+        """
+        self.channel = ct.c_int(int(0))
+        self.pArray = (ct.c_ushort * 2048)()
+        self.nTriggerMode = ct.c_int(0)
+
+        self.lib.bwtekReadResultUSB(self.nTriggerMode, averages, smooth_type, smooth_value,
+                                  ct.byref(self.pArray), self.channel)
+        return np.float32(as_array(self.pArray))
         
 if __name__ == '__main__':
     with GlacierX() as inst:
