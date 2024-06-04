@@ -26,8 +26,7 @@ class SpectrometerProcedure(Procedure):
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
     spec_averages = IntegerParameter('Spectrometer Averages', default=1)  # TODO: implement it to spectrometer
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
-
-    mag_inertia = FloatParameter('Magnet Inertia Time', units='s', default=0.5)
+    magnet_switch = FloatParameter('Magnet Switch Time', units='s', default=0.5)
 
     comment = Parameter('Comment', default='No Comment')
 
@@ -74,7 +73,7 @@ class SpectrometerProcedure(Procedure):
             log.info("Setting the first sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_ini_increase)
             log.info("First sine increase on field finished")
-            time.sleep(self.mag_inertia)
+            time.sleep(self.magnet_switch)
         except:
             log.error(traceback.format_exc())
             log.error("NIDAQ 6001 not connected !")
@@ -92,7 +91,7 @@ class SpectrometerProcedure(Procedure):
         log.info("Setting the sine decrease on field")
         self.NIDAQ.set_voltage_points(self.sine_decrease)
         log.info("Sine decrease on field finished")
-        time.sleep(self.mag_inertia)
+        time.sleep(self.magnet_switch)
         Sn = self.spectrometer.readResult(self.spec_averages)
         self.Sn_all.append(Sn)
         self.progress += 1
@@ -111,7 +110,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Setting the sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_increase)
             log.info(f"Loop {pair}: Sine increase on field finished")
-            time.sleep(self.mag_inertia)
+            time.sleep(self.magnet_switch)
             Sp = self.spectrometer.readResult(self.spec_averages)
             self.Sp_all.append(Sp)
             self.progress += 1
@@ -125,7 +124,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Setting the sine decrease on field")
             self.NIDAQ.set_voltage_points(self.sine_decrease)
             log.info(f"Loop {pair}: Sine decrease on field finished")
-            time.sleep(self.mag_inertia)
+            time.sleep(self.magnet_switch)
             Sn = self.spectrometer.readResult(self.spec_averages)
             self.Sn_all.append(Sn)
             self.progress += 1
@@ -149,7 +148,7 @@ class SpectrometerProcedure(Procedure):
         setpoint_reach = self.NIDAQ_points/self.NIDAQ_Fs  # in seconds
         t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_averages  # in seconds
 
-        duration = ((setpoint_reach + self.mag_inertia) * (2 * self.field_pairs + 1)
+        duration = ((setpoint_reach + self.magnet_switch) * (2 * self.field_pairs + 1)
                     + 2 * t_meas_spectometer * self.field_pairs * self.spec_averages)
 
         estimates = [
@@ -209,7 +208,7 @@ class SpectrometerProcedure(Procedure):
             log.info("Setting the end sine increase on field")
             self.NIDAQ.set_voltage_points(self.sine_end_increase)
             log.info("End sine increase on field finished")
-            time.sleep(self.mag_inertia)
+            time.sleep(self.magnet_switch)
             self.NIDAQ.shutdown()
             del self.NIDAQ
         except AttributeError:
