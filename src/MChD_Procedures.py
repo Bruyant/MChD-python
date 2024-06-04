@@ -116,10 +116,6 @@ class SpectrometerProcedure(Procedure):
             self.progress += 1
             self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
 
-            if self.should_stop():
-                log.warning("Caught the stop flag in the procedure")
-                break
-
             # NEGATIVE EDGE
             log.info(f"Loop {pair}: Setting the sine decrease on field")
             self.NIDAQ.set_voltage_points(self.sine_decrease)
