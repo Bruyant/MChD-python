@@ -79,6 +79,25 @@ class MainWindow(ManagedDockWindow):
 
 
 if __name__ == "__main__":
+
+    ###
+    # Monkey Patch
+    from pymeasure.display.curves import ResultsCurve
+
+    def patched_update_data(self):
+        """Updates the data by polling the results"""
+        if self.force_reload:
+            self.results.reload()
+        data = self.results.data  # get the current snapshot
+
+        # Set x-y data
+        dfx = data[self.x].tail(2048).tolist()
+        dfy = data[self.y].tail(2048).tolist()
+        self.setData(dfx, dfy)
+
+    ResultsCurve.update_data = patched_update_data
+    ###
+
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
