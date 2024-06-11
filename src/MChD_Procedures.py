@@ -39,10 +39,10 @@ class SpectrometerProcedure(Procedure):
     NIDAQ_points = 1000
     NIDAQ_Fs = 1000
 
-    Sp_all = []
-    Sn_all = []
-
     def startup(self):
+        self.Sp_all = []
+        self.Sn_all = []
+
         self.x_increase = np.linspace(-np.pi / 2, np.pi / 2, self.NIDAQ_points)
         self.x_decrease = np.linspace(np.pi / 2, 3 / 2 * np.pi, self.NIDAQ_points)
 
