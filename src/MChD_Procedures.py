@@ -139,13 +139,12 @@ class SpectrometerProcedure(Procedure):
         Returns:
             The displayable structure that contains the estimated time, size, length... of the experiment.
         """
-
-        # TODO: take into account the sequence
+        # SEQUENCE NOT TAKEN INTO ACCOUNT
         setpoint_reach = self.NIDAQ_points/self.NIDAQ_Fs  # in seconds
         t_meas_spectometer = self.spec_int_time * 1e-3 * self.spec_averages  # in seconds
 
         duration = ((setpoint_reach + self.magnet_switch) * (2 * self.field_pairs + 1)
-                    + 2 * t_meas_spectometer * self.field_pairs * self.spec_averages)
+                    + 2 * t_meas_spectometer * self.field_pairs)
 
         estimates = [
             ("Duration", "%d s" % int(duration)),
