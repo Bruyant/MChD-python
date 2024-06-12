@@ -44,8 +44,6 @@ class MainWindow(ManagedDockWindow):
 
         self.manager.queue(experiment)
 
-        # print(self.dock_widget.plot_frames)
-
     def abort(self):
         super().abort()
         self.save_only_last()
@@ -71,10 +69,10 @@ class MainWindow(ManagedDockWindow):
         # os.remove(self.f)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
 
         # Save Metadata
-        with open(self.f + 'filtered', 'a') as f:
+        with open(self.f + '_filtered', 'a') as f:
             for line in l:
                 f.write(line)
-        with open(self.f + 'filtered', 'ab') as f:
+        with open(self.f + '_filtered', 'ab') as f:
             df.to_csv(f, header=df.columns, index=False)
 
 
