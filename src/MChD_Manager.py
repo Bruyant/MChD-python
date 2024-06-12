@@ -36,7 +36,7 @@ class MainWindow(ManagedDockWindow):
 
     def queue(self):
         self.f = unique_filename(self.directory, prefix=self.filename, datetimeformat='%Y-%m-%d_%H-%M-%S',
-                                   index=False, ext='dat')  # from pymeasure.experimentD
+                                 index=False, ext='dat')  # from pymeasure.experimentD
 
         procedure = self.make_procedure()  # Procedure class was passed at construction
         results = Results(procedure, self.f)
@@ -66,14 +66,14 @@ class MainWindow(ManagedDockWindow):
         # Filter for last pair and selected columns
         df = data[data['Pair'] == max(data['Pair'])].loc[:, ['Wavelength', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']]
 
-        # os.remove(self.f)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
+        os.remove(self.f)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
 
         # Save Metadata
         with open(self.f + '_filtered', 'a') as f:
             for line in l:
                 f.write(line)
         with open(self.f + '_filtered', 'ab') as f:
-            df.to_csv(f, header=df.columns, index=False)
+            df.to_csv(f, header=df.columns, index=False, sep=';', decimal=',')
 
 
 if __name__ == "__main__":
