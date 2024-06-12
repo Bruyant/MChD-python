@@ -29,7 +29,7 @@ class MainWindow(ManagedDockWindow):
         )
         self.setWindowTitle('GUI for MChD')
         self.filename = r"MChD_"  # Sets default filename
-        self.directory = r'C:/Users/lorenco/Documents/MChD_Data'  # Sets default directory
+        self.directory = os.path.expanduser('~').replace('\\', '/') + r'/Documents/MChD_Data'  # Sets default directory
         # self.store_measurement = False  # Controls the 'Save data' toggle
         # self.file_input.extensions = ["csv", "txt", "data"]  # Sets recognized extensions, first is the default
         self.file_input.filename_fixed = True  # Controls whether the filename-field is frozen (but still displayed)
