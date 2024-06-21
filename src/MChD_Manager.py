@@ -15,7 +15,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SpectrometerProcedure,
-            inputs=self.parameters_list,
+            inputs=self.parameters_list, 
             displays=self.parameters_list,
             x_axis=['Wavelength'],
             y_axis=['Sp+Sn /2', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean'],
@@ -64,7 +64,7 @@ class MainWindow(ManagedDockWindow):
         data = pd.read_csv(self.f, comment='#', header=0)
 
         # Filter for last pair and selected columns
-        df = data[data['Pair'] == max(data['Pair'])].loc[:, ['Wavelength', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean']]
+        df = data[data['Pair'] == max(data['Pair'])].loc[:, ['Wavelength', 'Sp mean', 'Sn mean']]
 
         os.remove(self.f)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
 
