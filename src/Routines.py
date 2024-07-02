@@ -34,10 +34,11 @@ def plot_reference_dark(path, dark_filename, reference_filename):
     plt.legend()
 
     plt.subplot(3,1,3)
-    plt.plot(dark['Wavelength'], (reference['Sp mean']+reference['Sn mean'])/2-(dark['Sp mean']+dark['Sn mean'])/2, label='(Sp + Sn)/2')
+    plt.plot(dark['Wavelength'], (reference['Sp mean']+reference['Sn mean'])/2, label='ref')
+    plt.plot(dark['Wavelength'], (reference['Sp mean']+reference['Sn mean'])/2-(dark['Sp mean']+dark['Sn mean'])/2, label='ref - dark')
     plt.xlabel(r'$\lambda$')
     plt.ylabel('Count')
-    plt.title('Reference - Dark')
+    # plt.title('(Sp + Sn)/2')
     plt.grid()
     plt.legend()
     
@@ -81,3 +82,5 @@ def compute_absorbance(path, dark, reference, signal_filename):
     plt.legend()
 
     plt.show()
+
+    return signal

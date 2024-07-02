@@ -15,7 +15,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SpectrometerProcedure,
-            inputs=self.parameters_list, 
+            inputs=self.parameters_list,
             displays=self.parameters_list,
             x_axis=['Wavelength'],
             y_axis=['Sp+Sn /2', 'Sp+Sn /2 mean', 'Sp-Sn /2 mean'],
