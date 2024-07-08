@@ -16,7 +16,7 @@ def plot_reference_dark(path, dark_filename, reference_filename):
     dark = pd.read_csv(dark_path, sep=';', decimal=',', comment='#')
     reference = pd.read_csv(reference_path, sep=';', decimal=',', comment='#')
     
-    plt.figure(figsize=(14, 14))
+    plt.figure(figsize=(10, 10))
     plt.subplot(3,1,1)
     plt.plot(dark['Wavelength'], (reference['Sp mean']+reference['Sn mean'])/2, label='(Sp + Sn)/2')
     plt.xlabel(r'$\lambda$')
@@ -54,7 +54,7 @@ def compute_absorbance(path, dark, reference, signal_filename):
     A = -0.5 * (np.log10(signal['Sp mean']-dark['Sp mean'])+np.log10(signal['Sn mean']-dark['Sp mean'])-2*np.log10(reference['Sp mean']-dark['Sp mean']))
     dA = -0.5*( np.log10(signal['Sp mean']-dark['Sp mean']) - np.log10(signal['Sn mean']-dark['Sp mean']) )
 
-    plt.figure(figsize=(14, 14))
+    plt.figure(figsize=(10, 10))
     plt.subplot(4,1,1)
     plt.plot(signal['Wavelength'], (signal['Sp mean']+signal['Sn mean'])/2, label='(Sp + Sn)/2')
     plt.xlabel(r'$\lambda$')
