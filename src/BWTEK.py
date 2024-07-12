@@ -15,8 +15,8 @@ import configparser
 import numpy as np
 
 class GlacierX(AbstractContextManager):
-    dll="C:/BWTEK/BWSpec4/BWTEKUSB.dll"
-    dll=(r"C:\Users\lorenco\Documents\GitHub\MChD-python\bwtek\BWTEKUSB.dll")
+    dll = r"C:\BWTEK\BWSpec4\BWTEKUSB.dll"
+
     def __init__(self,channel=0,pixels=2048):
         """
         BWTEK USB dll wrapper
