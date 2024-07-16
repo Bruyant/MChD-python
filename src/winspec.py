@@ -27,7 +27,7 @@ DEFAULT_CAL_RANGE = {0: (900, 1100), 1: (1100, 1500), 2: (1100, 1500)}
 # Name of detector definition file used to store calibration data, etc
 DETECTOR_DEF_FILE = 'detector.txt'
 # Flag to enable reading spectra from the file (i.e. from disk) instead of reading via ActiveX. MUCH faster when large numFrames
-READ_FROM_FILE = False  # TODO: by now only works as True, patch code to be able as False
+READ_FROM_FILE = True  # TODO: by now only works as True, patch code to be able as False
 
 
 class Winspec(object):
