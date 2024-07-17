@@ -1,4 +1,8 @@
-﻿from __future__ import division
+﻿"""
+Class for controlling WinSpec adapted from https://github.com/timrae/pylase to Python 3.8.10
+"""
+
+from __future__ import division
 import win32com.client as w32c
 
 winspecTypeLib = w32c.gencache.EnsureModule("{1A762221-D8BA-11CF-AFC2-508201C10000}", 0, 3, 11)
