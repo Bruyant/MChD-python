@@ -136,6 +136,7 @@ class Winspec(object):
         assert self.getRoiHeight() == 1, "Not in spectroscopy mode"
         # Acquire the actual data
         wavelengthData, counts, outDict = self._getWinspecSpectrum(numFrames)
+        self.wavelengths = wavelengthData
         # close open documents and delete the current docFile
         if cleanup:
             docFiles = w32c.Dispatch("WinX32.DocFiles")

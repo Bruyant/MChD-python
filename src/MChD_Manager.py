@@ -10,7 +10,7 @@ import os
 
 class MainWindow(ManagedDockWindow):
     # Docked plots are started, the layout can be saved in a file that will be load at startup if it exists.
-    parameters_list = ['field_pairs', 'spec_int_time', 'spec_averages', 'control_voltage', 'magnet_switch', 'comment']
+    parameters_list = ['princeton_spectrometer', 'field_pairs', 'spec_int_time', 'spec_averages', 'control_voltage', 'magnet_switch', 'comment']
 
     def __init__(self):
         super().__init__(

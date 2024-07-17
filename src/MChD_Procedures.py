@@ -18,13 +18,15 @@ import matplotlib.pyplot as plt
 # Instruments
 from BWTEK import GlacierX
 from NationalInstruments import DAQ_6001
+from winspec import Winspec
 
 
 class SpectrometerProcedure(Procedure):
     # Consider a group_by or group_condition arguments.
+    princeton_spectrometer = BooleanParameter('Use Princeton spectrometer', default=False)
     field_pairs = IntegerParameter('Field Pairs', default=5)
     spec_int_time = FloatParameter('Spectrometer Integration Time', units='ms', default=5)
-    spec_averages = IntegerParameter('Spectrometer Averages', default=1)  # TODO: implement it to spectrometer
+    spec_averages = IntegerParameter('Spectrometer Averages', default=1)
     control_voltage = FloatParameter('Control Voltage Amplitude', units='V', default=10)
     magnet_switch = FloatParameter('Magnet Switch Time', units='s', default=0.5)
 
@@ -53,16 +55,27 @@ class SpectrometerProcedure(Procedure):
 
         log.info("Connecting and configuring the instruments")
 
-        # Connecting the Spectrometer
-        log.info("Connecting Spectrometer GlacierX ...")
-        try:
-            self.spectrometer = GlacierX()
-            self.spectrometer.readConfig()
-            self.spectrometer.integrationTime(self.spec_int_time)
-            self.spectrometer.getInterpolate()
-        except:
-            log.error(traceback.format_exc())
-            log.error("Spectrometer not connected !")
+        # Connecting the GlacierX Spectrometer
+        if not self.princeton_spectrometer:
+            log.info("Connecting Spectrometer GlacierX ...")
+            try:
+                self.spectrometer = GlacierX()
+                self.spectrometer.readConfig()
+                self.spectrometer.integrationTime(self.spec_int_time) # in [ms]
+                self.spectrometer.getInterpolate()
+            except:
+                log.error(traceback.format_exc())
+                log.error("GlacierX Spectrometer not connected !")
+
+        elif self.princeton_spectrometer:
+            log.info("Connecting Spectrometer Princeton Instruments ...")
+            try:
+                self.spectrometer = Winspec()
+                self.spectrometer.connectToWinspec()
+                self.spectrometer.setExposureTime(self.spec_int_time/1000)  # in [s]
+            except:
+                log.error(traceback.format_exc())
+                log.error("Princeton Spectrometer not connected !")
 
         # Connecting the NIDAQ 6001
         log.info("Connecting NIDAQ 6001 ...")
@@ -81,7 +94,10 @@ class SpectrometerProcedure(Procedure):
     def execute(self):
 
         # On Positive Edge
-        Sp = self.spectrometer.readResult(self.spec_averages)
+        if not self.princeton_spectrometer:
+            Sp = self.spectrometer.readResult(self.spec_averages)
+        elif self.princeton_spectrometer:
+            _, Sp, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
         self.Sp_all.append(Sp)
         self.progress += 1
         self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
@@ -92,7 +108,10 @@ class SpectrometerProcedure(Procedure):
         self.NIDAQ.set_voltage_points(self.sine_decrease)
         log.info("Sine decrease on field finished")
         time.sleep(self.magnet_switch)
-        Sn = self.spectrometer.readResult(self.spec_averages)
+        if not self.princeton_spectrometer:
+            Sn = self.spectrometer.readResult(self.spec_averages)
+        elif self.princeton_spectrometer:
+            _, Sn, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
         self.Sn_all.append(Sn)
         self.progress += 1
         self.pair += 1
@@ -111,7 +130,10 @@ class SpectrometerProcedure(Procedure):
             self.NIDAQ.set_voltage_points(self.sine_increase)
             log.info(f"Loop {pair}: Sine increase on field finished")
             time.sleep(self.magnet_switch)
-            Sp = self.spectrometer.readResult(self.spec_averages)
+            if not self.princeton_spectrometer:
+                Sp = self.spectrometer.readResult(self.spec_averages)
+            elif self.princeton_spectrometer:
+                _, Sp, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
             self.Sp_all.append(Sp)
             self.progress += 1
             self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
@@ -121,7 +143,10 @@ class SpectrometerProcedure(Procedure):
             self.NIDAQ.set_voltage_points(self.sine_decrease)
             log.info(f"Loop {pair}: Sine decrease on field finished")
             time.sleep(self.magnet_switch)
-            Sn = self.spectrometer.readResult(self.spec_averages)
+            if not self.princeton_spectrometer:
+                Sn = self.spectrometer.readResult(self.spec_averages)
+            elif self.princeton_spectrometer:
+                _, Sn, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
             self.Sn_all.append(Sn)
             self.progress += 1
             self.pair += 1
