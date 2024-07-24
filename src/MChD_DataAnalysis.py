@@ -14,3 +14,4 @@ path = os.path.expanduser('~').replace('\\', '/') + r'/Documents/MChD_Data/'
 print(f'Detected storage path: {path}')
 dark, reference = plot_reference_dark(path, dark_filename, reference_filename)
 signal = compute_absorbance(path, dark, reference, signal_filename)
+plt.show()

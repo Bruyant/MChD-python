@@ -84,6 +84,6 @@ def compute_absorbance(path, dark, reference, signal_filename):
     plt.grid()
     plt.legend()
 
-    plt.show()
+    # plt.show()
 
     return signal
