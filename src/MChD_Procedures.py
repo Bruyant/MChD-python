@@ -95,7 +95,7 @@ class SpectrometerProcedure(Procedure):
 
         # On Positive Edge
         if not self.princeton_spectrometer:
-            Sp = self.spectrometer.readResult(self.spec_averages)
+            Sp = self.spectrometer.averageNSpectrums(self.spec_averages)
         elif self.princeton_spectrometer:
             _, Sp, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
         self.Sp_all.append(Sp)
@@ -109,7 +109,7 @@ class SpectrometerProcedure(Procedure):
         log.info("Sine decrease on field finished")
         time.sleep(self.magnet_switch)
         if not self.princeton_spectrometer:
-            Sn = self.spectrometer.readResult(self.spec_averages)
+            Sn = self.spectrometer.averageNSpectrums(self.spec_averages)
         elif self.princeton_spectrometer:
             _, Sn, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
         self.Sn_all.append(Sn)
@@ -131,7 +131,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Sine increase on field finished")
             time.sleep(self.magnet_switch)
             if not self.princeton_spectrometer:
-                Sp = self.spectrometer.readResult(self.spec_averages)
+                Sp = self.spectrometer.averageNSpectrums(self.spec_averages)
             elif self.princeton_spectrometer:
                 _, Sp, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
             self.Sp_all.append(Sp)
@@ -144,7 +144,7 @@ class SpectrometerProcedure(Procedure):
             log.info(f"Loop {pair}: Sine decrease on field finished")
             time.sleep(self.magnet_switch)
             if not self.princeton_spectrometer:
-                Sn = self.spectrometer.readResult(self.spec_averages)
+                Sn = self.spectrometer.averageNSpectrums(self.spec_averages)
             elif self.princeton_spectrometer:
                 _, Sn, _ = self.spectrometer.acquireSpectrum(numFrames=self.spec_averages)
             self.Sn_all.append(Sn)

@@ -200,7 +200,23 @@ class GlacierX(AbstractContextManager):
         self.lib.bwtekReadResultUSB(self.nTriggerMode, averages, smooth_type, smooth_value,
                                   ct.byref(self.pArray), self.channel)
         return np.float32(as_array(self.pArray))
-        
+
+    def averageNSpectrums(self, N=1):
+        """
+        Does N acquisition of the spectrums with the current spectrometer configuration and returns its average.
+        Args:
+            N: the desired number of spectrums acquisition to average.
+
+        Returns: The averaged of N spectrums
+        """
+        S = np.zeros((N, inst.pixel_num), dtype='float32')
+
+        for i in range(N):
+            S[i] = inst.readSpectrum()
+
+        return np.mean(S, axis=0)
+
+
 if __name__ == '__main__':
     with GlacierX() as inst:
         inst.readEEPROM()
