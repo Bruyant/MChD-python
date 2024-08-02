@@ -209,10 +209,10 @@ class GlacierX(AbstractContextManager):
 
         Returns: The averaged of N spectrums
         """
-        S = np.zeros((N, inst.pixel_num), dtype='float32')
+        S = np.zeros((N, self.pixel_num), dtype='float32')
 
         for i in range(N):
-            S[i] = inst.readSpectrum()
+            S[i] = self.readSpectrum()
 
         return np.mean(S, axis=0)
 
