@@ -830,7 +830,7 @@ if __name__ == "__main__":
     WinSpec = Winspec()
     WinSpec.connectToWinspec()
 
-    a, b, c = WinSpec.acquireSpectrum(numFrames=1, exposureTime=None, cleanup=False)
+    a, b, c = WinSpec.acquireSpectrum(numFrames=10, exposureTime=None, cleanup=False)
     print(a)
     print(type(b))
     print(c)

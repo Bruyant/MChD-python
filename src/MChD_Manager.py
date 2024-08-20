@@ -6,6 +6,7 @@ from pymeasure.experiment import unique_filename, Results
 from datetime import datetime
 import pandas as pd
 import os
+import time
 
 
 class MainWindow(ManagedDockWindow):
@@ -35,17 +36,24 @@ class MainWindow(ManagedDockWindow):
         self.file_input.filename_fixed = True  # Controls whether the filename-field is frozen (but still displayed)
 
     def queue(self):
-        self.f = unique_filename(self.directory, prefix=self.filename, datetimeformat='%Y-%m-%d_%H-%M-%S',
-                                 index=False, ext='dat')  # from pymeasure.experimentD
+        filename_path = unique_filename(self.directory, prefix=self.filename, datetimeformat='%Y-%m-%d_%H-%M-%S',
+                                 index=False, ext='dat')
 
         procedure = self.make_procedure()  # Procedure class was passed at construction
-        results = Results(procedure, self.f)
+        results = Results(procedure, filename_path)
         experiment = self.new_experiment(results)
 
         self.manager.queue(experiment)
 
     def abort(self):
+        # print(self.manager._running_experiment.data_filename)
+
+        # Execute standard abort function
         super().abort()
+
+        # Wait for the procedure to complete the pairs upon triggering abortion event before saving the data.
+        while not self.manager._running_experiment.procedure.is_executed:
+            time.sleep(1e-3)
         self.save_only_last()
 
     def finished(self, experiment):
@@ -55,24 +63,28 @@ class MainWindow(ManagedDockWindow):
     def save_only_last(self):
         # Get Metadata
         l = []
-        with open(self.f) as f:
+        filename = self.manager._running_experiment.data_filename
+        with open(filename) as f:
             for line in f.readlines():
                 if line[0] == '#':
                     l.append(line)
 
         # Get data
-        data = pd.read_csv(self.f, comment='#', header=0)
+        data = pd.read_csv(filename, comment='#', header=0)
 
         # Filter for last pair and selected columns
         df = data[data['Pair'] == max(data['Pair'])].loc[:, ['Wavelength', 'Sp mean', 'Sn mean']]
 
-        os.remove(self.f)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
+        try:
+            os.remove(filename)  # Uncomment to delete the complete file and only save the Sigma and Delta mean data
+        except PermissionError:
+            print(f'File {filename} not delete due to PermissionError')
 
         # Save Metadata
-        with open(self.f + '_filtered', 'a') as f:
+        with open(filename + '_filtered', 'a') as f:
             for line in l:
                 f.write(line)
-        with open(self.f + '_filtered', 'ab') as f:
+        with open(filename + '_filtered', 'ab') as f:
             df.to_csv(f, header=df.columns, index=False, sep=';', decimal=',')
 
 

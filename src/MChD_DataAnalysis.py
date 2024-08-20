@@ -5,9 +5,9 @@ import os
 from Routines import *
 
 # Inputs Definition
-dark_filename = '2024-06-13_15-30-27'
-signal_filename = 'MChD_2024-07-01_14-19'
-reference_filename = 'MChD_2024-06-13_15-33-18'
+dark_filename = 'MChD_2024-07-12_10-37-51'
+signal_filename = 'MChD_2024-07-12_10-58-59'
+reference_filename = 'MChD_2024-07-12_11-01-34'
 
 # Computation code
 path = os.path.expanduser('~').replace('\\', '/') + r'/Documents/MChD_Data/'

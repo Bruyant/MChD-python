@@ -16,9 +16,7 @@ log.addHandler(logging.NullHandler())
 
 import matplotlib.pyplot as plt
 # Instruments
-from BWTEK import GlacierX
 from NationalInstruments import DAQ_6001
-from winspec import Winspec
 
 
 class SpectrometerProcedure(Procedure):
@@ -40,6 +38,7 @@ class SpectrometerProcedure(Procedure):
     pair = 0
     NIDAQ_points = 1000
     NIDAQ_Fs = 1000
+    is_executed = False
 
     def startup(self):
         self.Sp_all = []
@@ -57,6 +56,7 @@ class SpectrometerProcedure(Procedure):
 
         # Connecting the GlacierX Spectrometer
         if not self.princeton_spectrometer:
+            from BWTEK import GlacierX
             log.info("Connecting Spectrometer GlacierX ...")
             try:
                 self.spectrometer = GlacierX()
@@ -68,6 +68,7 @@ class SpectrometerProcedure(Procedure):
                 log.error("GlacierX Spectrometer not connected !")
 
         elif self.princeton_spectrometer:
+            from winspec import Winspec
             log.info("Connecting Spectrometer Princeton Instruments ...")
             try:
                 self.spectrometer = Winspec()
@@ -154,6 +155,9 @@ class SpectrometerProcedure(Procedure):
             # Emit data
             self.send_data(Sp, Sn)
             self.emit('progress', 100 * self.progress / (self.field_pairs * 2))
+
+        time.sleep(0.1)
+        self.is_executed = True
 
     def get_estimates(self, sequence_length=None, sequence=None):
         """
