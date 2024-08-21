@@ -46,7 +46,7 @@ class MainWindow(ManagedDockWindow):
         self.manager.queue(experiment)
 
     def abort(self):
-        # print(self.manager._running_experiment.data_filename)
+        filename = self.manager._running_experiment.data_filename
 
         # Execute standard abort function
         super().abort()
@@ -54,16 +54,17 @@ class MainWindow(ManagedDockWindow):
         # Wait for the procedure to complete the pairs upon triggering abortion event before saving the data.
         while not self.manager._running_experiment.procedure.is_executed:
             time.sleep(1e-3)
-        self.save_only_last()
+        self.save_only_last(filename)
 
     def finished(self, experiment):
+        filename = experiment.data_filename
         super().finished(experiment)
-        self.save_only_last()
+        self.save_only_last(filename)
 
-    def save_only_last(self):
+    def save_only_last(self, filename):
         # Get Metadata
         l = []
-        filename = self.manager._running_experiment.data_filename
+
         with open(filename) as f:
             for line in f.readlines():
                 if line[0] == '#':
