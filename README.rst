@@ -42,6 +42,15 @@ A longer description of your project goes here...
 
 .. _pyscaffold-notes:
 
+License
+====
+
+Copyright(c) 2014-2024
+PhiMag Developers and Centre National de la Recherche Scientifique
+see AUTHORS.rst
+
+Licensed under GPL-3.0-or-later - see LICENSE.txt
+
 Note
 ====
 

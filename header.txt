@@ -1,0 +1,49 @@
+#
+# This file is part of the Python for High Magnetic Field(PhiMag) package
+#
+# Copyright(c) 2014-2024 PhiMag Developers 
+# and Centre National de la Recherche Scientifique
+# see AUTHORS.rst
+#
+# Licensed under GPL-3.0-or-later - see LICENSE.rst
+
+
+
+https://github.com/johann-petrak/licenseheaders
+
+licenseheaders.py  -cy  -n "Python for High Magnetic Field(PhiMag)" -u http://the.projectname.com -t .copyright.tmpl
+
+
+
+
+# This file is part of ${projectname} package
+#(see ${projecturl}).
+#
+# Copyright(c) 2014-${years} PhiMag Developers 
+# and Centre National de la Recherche Scientifique
+# see AUTHORS.rst
+#
+# Licensed under GPL-3.0-or-later - see LICENSE.rst
+
+
+Copyright (c) ${years} ${owner}.
+
+This file is part of ${projectname} 
+
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+
+pip install licenseheaders
