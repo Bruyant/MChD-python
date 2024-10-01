@@ -1,3 +1,13 @@
+#
+# This file is part of Python for Magneto-Chiral Dichroism (MChD) package
+# (see https://github.com/Bruyant/MChD-python).
+#
+# Copyright(c) 2014-2024 Nicolas Bruyant & Nuno Prata
+# and Centre National de la Recherche Scientifique
+# see AUTHORS.rst
+#
+# Licensed under GPL-3.0-or-later - see LICENSE.rst#
+
 # This file is execfile()d with the current directory set to its containing dir.
 #
 # This file only contains a selection of the most common options. For a full
