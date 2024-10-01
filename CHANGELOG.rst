@@ -1,10 +1,14 @@
 =========
 Changelog
 =========
+Version 0.2
+===========
+
+- Pymesure GUI
+- BWTEK support
+- Princeton Intruments support via winspec
+
 
 Version 0.1
 ===========
-
-- Feature A added
-- FIX: nasty bug #1729 fixed
-- add your changes here!
+- Old proof of concept from Nicolas
