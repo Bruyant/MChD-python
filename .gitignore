@@ -56,3 +56,4 @@ MANIFEST
 *.npy
 *.npz
 *.h5
+.readthedocs.yml
