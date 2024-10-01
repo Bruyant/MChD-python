@@ -1,4 +1,14 @@
+#
+# This file is part of Python for Magneto-Chiral Dichroism (MChD) package
+# (see https://github.com/Bruyant/MChD-python).
+#
+# Copyright(c) 2014-2024 Nicolas Bruyant & Nuno Prata
+# and Centre National de la Recherche Scientifique
+# see AUTHORS.rst
+#
+# Licensed under GPL-3.0-or-later - see LICENSE.rst#
 import ctypes as ct
+import time
 from time import sleep
 
 from datetime import datetime
@@ -11,11 +21,11 @@ import matplotlib.pyplot as plt
 
 from contextlib import AbstractContextManager
 import configparser
+import numpy as np
 
+class GlacierX(AbstractContextManager):
+    dll = r"C:\BWTEK\BWSpec4\BWTEKUSB.dll"
 
-class spectrometer(AbstractContextManager):
-    dll="C:/BWTEK/BWSpec4/BWTEKUSB.dll"
-    dll=(r"C:\Users\lorenco\Documents\GitHub\MChD-python\bwtek\BWTEKUSB.dll")
     def __init__(self,channel=0,pixels=2048):
         """
         BWTEK USB dll wrapper
@@ -65,23 +75,23 @@ class spectrometer(AbstractContextManager):
         Return:  1,2,3
         """
         nUSBType = ct.c_int(1)
-        self.lib.GetUSBType(ct.byref(nUSBType),self.channel)
+        self.lib.GetUSBType(ct.byref(nUSBType), self.channel)
         return nUSBType.value
 
-    def readEEPROM(self,filename="param.txt"):
+    def readEEPROM(self, filename="spectrometer_config/bwtek_param.txt"):
         """
         Read parameters from eprom
         """
         filename = ct.create_string_buffer(str.encode(filename))
-        self.lib.bwtekReadEEPROMUSB(filename,self.channel)
+        self.lib.bwtekReadEEPROMUSB(filename, self.channel)
         
-    def readConfig(self,filename="param.txt"):
+    def readConfig(self, filename="spectrometer_config/bwtek_param.txt"):
         """
         Read parameters from ini file 
         
         """
         config = configparser.ConfigParser()
-        config.read('param.txt')
+        config.read(filename)
         #configdict={s:dict(config.items(s)) for s in config.sections()}
         self.config=config
         
@@ -113,7 +123,10 @@ class spectrometer(AbstractContextManager):
             x.append(a)
             y.append(b)
         return x,y
-        
+
+    def shutdown(self):
+        self.lib.CloseDevices()
+
     def __exit__(self,exc_type, exc_value, traceback):
         self.lib.CloseDevices()
     
@@ -134,12 +147,20 @@ class spectrometer(AbstractContextManager):
         read the spectrum
         return: numpy array sharing the memory
         """
+        self.channel = ct.c_int(int(0))
+        self.pArray = (ct.c_ushort * 2048)()
+        self.nTriggerMode = ct.c_int(0)
+
         self.lib.bwtekDataReadUSB(self.nTriggerMode,
-                                  ct.byref(self.pArray),self.channel)
-        return as_array(self.pArray)
+                                  ct.byref(self.pArray), self.channel)
+        return np.float32(as_array(self.pArray))
     
     def integrationTime(self, Itime):
-        Itime = ct.c_long(int(Itime))  # Time in microseconds
+        """
+        Itime for BTC112E: 5 – 65535ms in milliseconds
+
+        """
+        Itime = ct.c_long(int(Itime))
         return self.lib.bwtekSetTimeUSB(Itime, self.channel)
         
     def readSpectrumTTL(self):
@@ -165,14 +186,58 @@ class spectrometer(AbstractContextManager):
             g.create_dataset("Spectrums", data=res,dtype='u2',compression="gzip")
             g.create_dataset("TTLinput", data=ttlin,dtype='i1',compression="gzip")
             g.attrs["Timestamps"]=[str(tstamp) for tstamp in tstamps]  
-        
-        
+
+    def readResult(self, averages, smooth_type=0, smooth_value=0):
+        """
+                This function is for reading out data from the detector then applying some data processing
+                return: numpy array sharing the memory
+
+        smooth_type: 0 for no smoothing function
+                     1 for FFT smoothing
+                     2 for Savitzky-Golay smoothing
+                     3 for Boxcar smoothing.
+
+        smooth_value: When using FFT smoothing (nTypeSmoothing=1), this parameter indicates the percentage of cutoff
+                      frequency. The nValueSmoothing should be 0 to 100.
+                      When using Savitzky-Golay smoothing (nTypeSmoothing=2), The nValueSmoothing should be 2 to 5.
+
+        """
+        self.channel = ct.c_int(int(0))
+        self.pArray = (ct.c_ushort * 2048)()
+        self.nTriggerMode = ct.c_int(0)
+
+        self.lib.bwtekReadResultUSB(self.nTriggerMode, averages, smooth_type, smooth_value,
+                                  ct.byref(self.pArray), self.channel)
+        return np.float32(as_array(self.pArray))
+
+    def averageNSpectrums(self, N=1):
+        """
+        Does N acquisition of the spectrums with the current spectrometer configuration and returns its average.
+        Args:
+            N: the desired number of spectrums acquisition to average.
+
+        Returns: The averaged of N spectrums
+        """
+        S = np.zeros((N, self.pixel_num), dtype='float32')
+
+        for i in range(N):
+            S[i] = self.readSpectrum()
+
+        return np.mean(S, axis=0)
+
+
 if __name__ == '__main__':
-    with spectrometer() as inst:
-        inst.readEEPROM("atest.dat")
+    with GlacierX() as inst:
+        inst.readEEPROM()
         print('EEPROM read into file')
-        inttime=20
+        inst.readConfig()
+        inttime = 5
         print(inst.integrationTime(inttime))
         print(f'integration time changed to {inttime}')
-        plt.plot(inst.readSpectrum())
-        plt.show()
+        inst.getInterpolate()
+        spectrum = inst.readSpectrum()
+
+        spectrum2 = inst.readSpectrum()
+    plt.plot(inst.wavelengths, spectrum)
+    plt.plot(inst.wavelengths, spectrum2)
+    plt.show()
