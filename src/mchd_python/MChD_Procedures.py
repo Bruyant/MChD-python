@@ -211,6 +211,12 @@ class SpectrometerProcedure(Procedure):
         if np.max(Sp) > 65000 or max(Sn) > 65000:
             log.warning("Spectrum is possibly saturated !")
 
+        #calculate mean
+        Sp_mean = np.mean(Sp_all, axis=0)
+        Sn_mean = np.mean(Sn_all, axis=0)
+        SpSn_summ_mean=np.mean((Sp_all + Sn_all) / 2, axis=0)
+        SpSn_delta_mean = np.mean((Sp_all - Sn_all) / 2, axis=0)
+
         for i in range(len(Sp)):  # Workaround of emitting the whole spectrum
             p = Sp[i]
             n = Sn[i]
@@ -219,12 +225,12 @@ class SpectrometerProcedure(Procedure):
                 'Wavelength': spectrum_x[i],
                 'Sp': p,
                 'Sn': n,
-                'Sp mean': np.mean(Sp_all, axis=0)[i],
-                'Sn mean': np.mean(Sn_all, axis=0)[i],
+                'Sp mean': Sp_mean[i],
+                'Sn mean': Sn_mean[i],
                 'Sp+Sn /2':  (p+n) / 2,
                 'Sp-Sn /2':  (p-n) / 2,
-                'Sp+Sn /2 mean': np.mean((Sp_all + Sn_all) / 2, axis=0)[i],
-                'Sp-Sn /2 mean': np.mean((Sp_all - Sn_all) / 2, axis=0)[i],
+                'Sp+Sn /2 mean': SpSn_summ_mean[i],
+                'Sp-Sn /2 mean': SpSn_delta_mean[i],
                 'max_SUM': np.max((Sp + Sn)/2)
             }
             self.emit('results', data)
